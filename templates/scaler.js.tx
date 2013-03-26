@@ -1,0 +1,34 @@
+$(document).ready(function() {
+    var img_s3_url = function(width,height,data) {
+        var key = data.src+(width||"_")+(height||"_")+(data.scale||"_");
+        return '<: $bucketurl :>'+$.sha256(key);
+    }
+
+    $('img.autoscale')
+        .attr("src",function() {
+            return img_s3_url(
+                $(this).width(),
+                $(this).height(),
+                $(this).data()
+            );
+        })
+        .one("error", function() {
+            $.ajax('/trigger', { cache: true,
+                dataType: 'json', context: this, timeout: <: $timeout :>, data: {
+                    width: $(this).width(),
+                    height: $(this).height(),
+                    data: $(this).data(),
+                },
+                success: function() {
+                    $(this).attr('src',$(this).attr('src'));
+                },
+                error: function(r,t) {
+                    $(this).attr("src",$(this).data("src"));
+                },
+            });
+        })
+        .one("load",function() {
+            $(this).css("visibility","visible");
+        })
+    ;
+});

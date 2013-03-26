@@ -1,0 +1,29 @@
+<html>
+<head>
+    <title>
+        Image scaler demo
+    </title>
+    <style>
+        img.demo { width: 30%; height: 300px; }
+        img.autoscale { visibility: hidden; }
+    </style>
+</head>
+<body>
+    <img
+        class="demo autoscale"
+        data-src="http://www.frantic.com/assets/img/home/home-1.jpg"
+    />
+    <img
+        class="demo autoscale"
+        data-src="http://www.frantic.com/assets/img/home/home-2.jpg"
+    />
+    <img
+        class="demo autoscale"
+        data-src="http://www.frantic.com/assets/img/home/home-3.jpg"
+    />
+
+    <script src="/assets/js/jquery.min.js"></script>
+    <script src="/assets/js/jquery.sha256.min.js"></script>
+    <script src="/scaler.js"></script>
+</body>
+</html>
