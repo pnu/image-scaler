@@ -10,3 +10,4 @@ requires 'Imager';
 requires 'LWP::UserAgent';
 requires 'MojoX::Renderer::Xslate';
 requires 'Try::Tiny';
+requires 'Plack::Middleware::Header';
