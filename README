@@ -1,0 +1,36 @@
+Automatic image scaler.
+Start the server and see "http://localhost:5000/demo" for an example.
+
+DEPENDENCIES
+
+    Create a S3 bucket and an access key that has permissions to create
+    new objects there. The bucket should be named xxx-1, ie.
+    frantic-scaler-1. In future the assets will be distributed to
+    all xxx-1, -2, ... buckets.
+
+THE ENV
+
+    cat >.env
+    AWS_ACCESS_KEY_ID=...
+    AWS_SECRET_ACCESS_KEY=...
+    S3_BUCKET_NAME=frantic-scaler
+    ^D
+
+    Note! The file .env is in .gitignore, and must not be added to the
+    repository.
+
+LOCAL DEPLOYMENT
+
+    cpanm --installdeps .
+    export `cat .env`
+    plackup
+
+HEROKU DEPLOYMENT
+
+    heroku create --buildpack https://github.com/pnu/heroku-buildpack-perl.git
+    heroku config:set `cat .env`
+    git push heroku master
+
+AUTHOR
+
+    panu.ervamaa@frantic.com
