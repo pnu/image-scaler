@@ -15,7 +15,7 @@ $(document).ready(function() {
             );
         })
         .one("error", function() {
-            $.ajax('/trigger', { cache: true,
+            $.ajax('<: $c.url_for('/trigger').to_abs :>', { cache: true,
                 dataType: 'json', context: this, timeout: <: $timeout :>, data: {
                     width: $(this).width() * ratio,
                     height: $(this).height() * ratio,
