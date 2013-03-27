@@ -93,6 +93,7 @@ sub store : method {
         'x-amz-meta-client-user-agent' => $c->req->headers->user_agent,
     }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
+    print STDERR "$src -> $width x $height -> $name\n";
     return 'STORED http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
 }
 

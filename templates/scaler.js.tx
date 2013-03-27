@@ -4,20 +4,22 @@ $(document).ready(function() {
         return '<: $bucketurl :>'+$.sha256(key);
     }
 
+    var ratio = window.devicePixelRatio || 1;
+
     $('img.autoscale')
         .attr("src",function() {
             return img_s3_url(
-                $(this).width(),
-                $(this).height(),
+                $(this).width() * ratio,
+                $(this).height() * ratio,
                 $(this).data()
             );
         })
         .one("error", function() {
             $.ajax('/trigger', { cache: true,
                 dataType: 'json', context: this, timeout: <: $timeout :>, data: {
-                    width: $(this).width(),
-                    height: $(this).height(),
-                    data: $(this).data(),
+                    width: $(this).width() * ratio,
+                    height: $(this).height() * ratio,
+                    data: $(this).data()
                 },
                 success: function() {
                     $(this).attr('src',$(this).attr('src'));
