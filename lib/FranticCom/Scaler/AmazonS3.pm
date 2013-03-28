@@ -14,7 +14,7 @@ has 'aws_secret_access_key' =>  ( is => 'rw', default => $ENV{AWS_SECRET_ACCESS_
 has 's3_bucket_name' =>         ( is => 'rw', default => $ENV{S3_BUCKET_NAME} );
 
 has 's3' =>         ( is => 'ro', builder => '_build_s3', lazy => 1 );
-has 'buckets' =>    ( is => 'ro', builder => '_build_buckets', lazy => 1 );
+has 'bucket' =>     ( is => 'ro', builder => '_build_bucket', lazy => 1 );
 has 'ua' =>         ( is => 'ro', builder => '_build_ua', lazy => 1 );
 
 sub _build_ua {
@@ -37,13 +37,9 @@ sub _build_s3 {
     });
 }
 
-sub _build_buckets {
+sub _build_bucket {
     my ( $self ) = @_;
-    my $bucketpattern = '^'.$self->s3_bucket_name.'-(\d+)?$';
-    [
-        grep { $_->bucket =~ m/$bucketpattern/ }
-            @{ $self->s3->buckets->{buckets}   }
-    ];
+    $self->s3->bucket($self->s3_bucket_name);
 }
 
 sub store : method {
@@ -54,8 +50,7 @@ sub store : method {
     );
 
     my $name = $self->img_hash($params);
-    my $bucket = $self->img_bucket($name);
-    my $head = $bucket->head_key( $name );
+    my $head = $self->bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
         my $img_head = $self->ua->head( $src ) || die;
         return 'NOT MODIFIED' if (
@@ -82,7 +77,7 @@ sub store : method {
             || X->throw( error => Imager->errstr );
     }
 
-    my $response = $bucket->add_key( $name, $img_out, {
+    my $response = $self->bucket->add_key( $name, $img_out, {
         content_type => 'image/jpeg',
         acl_short => 'public-read',
         'x-amz-meta-src-uri' => $src,
@@ -94,17 +89,13 @@ sub store : method {
     }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
     print STDERR "$src -> $width x $height -> $name\n";
-    return 'STORED http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
-}
-
-sub img_bucket {
-    my ( $self, $imgid ) = @_;
-    $self->buckets->[ hex(substr($imgid,0,8)) % @{$self->buckets} ];
+    return 'STORED http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
 }
 
 sub img_hash {
     my ( $self, $params ) = @_;
     my ($src,$width,$height,$scale) = ( $params->{src}, $params->{width}, $params->{height}, $params->{scale} );
+    warn ( "HASHING ", $src, $width||'_', $height||'_', $scale||'_' );
     sha256_hex( $src, $width||'_', $height||'_', $scale||'_' );
 }
 

@@ -4,9 +4,7 @@ Start the server and see "http://localhost:5000/demo" for an example.
 DEPENDENCIES
 
     Create a S3 bucket and an access key that has permissions to create
-    new objects there. The bucket should be named xxx-1, ie.
-    frantic-scaler-1. In future the assets will be distributed to
-    all xxx-1, -2, ... buckets.
+    new objects there.
 
 THE ENV
 

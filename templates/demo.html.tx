@@ -22,8 +22,8 @@
         data-src="http://www.frantic.com/assets/img/home/home-3.jpg"
     />
 
-    <script src="/assets/js/jquery.min.js"></script>
-    <script src="/assets/js/jquery.sha256.min.js"></script>
-    <script src="/scaler.js"></script>
+    <script src="<: $c.url_for('/assets/js/jquery.min.js').to_abs :>"></script>
+    <script src="<: $c.url_for('/assets/js/jquery.sha256.min.js').to_abs :>"></script>
+    <script src="<: $c.url_for('/scaler.js').to_abs :>"></script>
 </body>
 </html>

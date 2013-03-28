@@ -1,6 +1,7 @@
 $(document).ready(function() {
     var img_s3_url = function(width,height,data) {
         var key = data.src+(width||"_")+(height||"_")+(data.scale||"_");
+        console.log("HASHING ",key);
         return '<: $bucketurl :>'+$.sha256(key);
     }
 
@@ -9,16 +10,16 @@ $(document).ready(function() {
     $('img.autoscale')
         .attr("src",function() {
             return img_s3_url(
-                $(this).width() * ratio,
-                $(this).height() * ratio,
+                ($(this).data('width') || $(this).width()) * ratio,
+                ($(this).data('height') || $(this).height()) * ratio,
                 $(this).data()
             );
         })
         .one("error", function() {
             $.ajax('<: $c.url_for('/trigger').to_abs :>', { cache: true,
                 dataType: 'json', context: this, timeout: <: $timeout :>, data: {
-                    width: $(this).width() * ratio,
-                    height: $(this).height() * ratio,
+                    width: ($(this).data('width') || $(this).width()) * ratio,
+                    height: ($(this).data('height') || $(this).height()) * ratio,
                     data: $(this).data()
                 },
                 success: function() {

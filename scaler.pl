@@ -18,7 +18,7 @@ get '/scaler.js' => sub {
     my $self = shift;
     $self->stash->{timeout} = $self->config->{timeout};
     $self->stash->{bucketurl} = 'http://s3-eu-west-1.amazonaws.com/'.
-        $s3->buckets->[0]->bucket.'/';
+        $s3->bucket->bucket.'/';
     $self->render(template=>'scaler', format=>'js', handler=>'tx');
 };
 
