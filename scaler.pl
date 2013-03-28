@@ -19,6 +19,7 @@ get '/scaler.js' => sub {
     $self->stash->{timeout} = $self->config->{timeout};
     $self->stash->{bucketurl} = 'http://s3-eu-west-1.amazonaws.com/'.
         $s3->bucket->bucket.'/';
+    $self->res->headers->header( 'Cache-Control' => 'max-age=600' );
     $self->render(template=>'scaler', format=>'js', handler=>'tx');
 };
 
