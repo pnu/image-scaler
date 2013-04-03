@@ -43,13 +43,8 @@ sub _build_bucket {
 }
 
 sub store : method {
-    my ( $self, $params, $c ) = @_;
-    my ($src,$width,$height,$scale) = (
-        $params->{src}, $params->{width},
-        $params->{height}, $params->{scale}
-    );
+    my ( $self, $src, $name, $metadata, $properties ) = @_;
 
-    my $name = $self->img_hash($params);
     my $head = $self->bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
         my $img_head = $self->ua->head( $src ) || die;
@@ -64,6 +59,10 @@ sub store : method {
 
     my $img_src = $self->ua->get( $src );
     die if $img_src->is_error;
+
+    my ($width,$height,$scale) = (
+        $properties->{width}, $properties->{height}, $properties->{scale}
+    ) if $properties;
 
     my $img = Imager->new( data => $img_src->content ) || die Imager->errstr;
     my $img_out;
@@ -84,19 +83,11 @@ sub store : method {
         'x-amz-meta-src-etag' => scalar $img_src->header('ETag'),
         'x-amz-meta-src-date' => scalar $img_src->header('Date'),
         'x-amz-meta-src-last-modified' => scalar $img_src->header('Last-Modified'),
-        'x-amz-meta-client-remote-address' => $c->tx->remote_address,
-        'x-amz-meta-client-user-agent' => $c->req->headers->user_agent,
+        %{ $metadata || {} },
     }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
     print STDERR "$src -> $width x $height -> $name\n";
     return 'STORED http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
-}
-
-sub img_hash {
-    my ( $self, $params ) = @_;
-    my ($src,$width,$height,$scale) = ( $params->{src}, $params->{width}, $params->{height}, $params->{scale} );
-    warn ( "HASHING ", $src, $width||'_', $height||'_', $scale||'_' );
-    sha256_hex( $src, $width||'_', $height||'_', $scale||'_' );
 }
 
 1;

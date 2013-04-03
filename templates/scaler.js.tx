@@ -1,27 +1,29 @@
 $(document).ready(function() {
-    var img_s3_url = function(width,height,data) {
-        var key = data.src+(width||"_")+(height||"_")+(data.scale||"_");
-        console.log("HASHING ",key);
-        return '<: $bucketurl :>'+$.sha256(key);
-    }
 
-    var ratio = window.devicePixelRatio || 1;
+    var s3_bucket_url = '<: $bucketurl | raw :>';
+    var trigger_url = '<: $c.url_for('/trigger').to_abs | raw :>';
+    var trigger_timeout = <: $timeout | raw :>;
+    var pixel_ratio = window.devicePixelRatio || 1;
+
+    var image_s3_url = <: $image_s3_url_code | raw :>;
+
+    var image_properties = function($el) {
+        var data = $el.data();
+        data.width = data.width || $el.width();
+        data.height = data.height || $el.height();
+        data.width *= pixel_ratio;
+        data.height *= pixel_ratio;
+        return data;
+    };
 
     $('img.autoscale')
         .attr("src",function() {
-            return img_s3_url(
-                ($(this).data('width') || $(this).width()) * ratio,
-                ($(this).data('height') || $(this).height()) * ratio,
-                $(this).data()
-            );
+            return s3_bucket_url+image_s3_url(image_properties($(this)));
         })
         .one("error", function() {
-            $.ajax('<: $c.url_for('/trigger').to_abs :>', { cache: true,
-                dataType: 'json', context: this, timeout: <: $timeout :>, data: {
-                    width: ($(this).data('width') || $(this).width()) * ratio,
-                    height: ($(this).data('height') || $(this).height()) * ratio,
-                    data: $(this).data()
-                },
+            $.ajax( trigger_url, {
+                cache: true, dataType: 'json', context: this,
+                timeout: trigger_timeout, data: image_properties($(this)),
                 success: function() {
                     $(this).attr('src',$(this).attr('src'));
                 },

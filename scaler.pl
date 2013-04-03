@@ -9,6 +9,27 @@ plugin 'Config' => { file => 'scaler.conf' };
 
 my $s3 = FranticCom::Scaler::AmazonS3->new;
 
+my $image_s3_url = sub {
+    my ( $data ) = @_;
+    my $src = $data->{src};
+    my $width = $data->{width} || '_';
+    my $height = $data->{height} || '_';
+    my $scale = $data->{scale} || '_';
+    my $key = $src.$width.$height.$scale;
+    warn "HASHING $key";
+    sha256_hex( $key );
+};
+
+my $image_s3_url_js = q{ function(data) {
+        var src = data.src;
+        var width = data.width || '_';
+        var height = data.height || '_';
+        var scale = data.scale || '_';
+        var key = src+width+height+scale;
+        console.log("HASHING ",key);
+        return $.sha256(key);
+    }};
+
 get '/demo' => sub {
     my $self = shift;
     $self->render(template=>'demo', format=>'html', handler=>'tx');
@@ -16,6 +37,7 @@ get '/demo' => sub {
 
 get '/scaler.js' => sub {
     my $self = shift;
+    $self->stash->{image_s3_url_code} = $image_s3_url_js;
     $self->stash->{timeout} = $self->config->{timeout};
     $self->stash->{bucketurl} = 'http://s3-eu-west-1.amazonaws.com/'.
         $s3->bucket->bucket.'/';
@@ -25,14 +47,15 @@ get '/scaler.js' => sub {
 
 get '/trigger' => sub {
     my $self = shift;
-    try { 
-        my $args = {
-            width => scalar $self->param('width'),
-            height => scalar $self->param('height'),
-            scale => scalar $self->param('data[scale]'),
-            src => scalar $self->param('data[src]'),
+    try {
+        my $properties = $self->req->params->to_hash;
+        my $src = $properties->{src};
+        my $name = $image_s3_url->($properties);
+        my $metadata = {
+            ##'x-amz-meta-client-remote-address' => $self->tx->remote_address,
+            'x-amz-meta-client-user-agent' => $self->req->headers->user_agent,
         };
-        my $res = $s3->store( $args, $self );
+        my $res = $s3->store( $src, $name, $metadata, $properties );
         $self->res->headers->header( 'X-Frantic-Scaler' => $res );
         $self->render( text => '', format=>'txt', status => 204 );
     } catch {
