@@ -16,8 +16,9 @@ my $image_s3_url = sub {
     my $height = $data->{height} || '_';
     my $scale = $data->{scale} || '_';
     my $key = $src.$width.$height.$scale;
-    warn "HASHING $key";
-    sha256_hex( $key );
+    my $hash = sha256_hex( $key );
+    print STDERR "HASH $src ($width x $height x $scale) -> $hash\n";
+    return $hash;
 };
 
 my $image_s3_url_js = q{ function(data) {
@@ -26,8 +27,9 @@ my $image_s3_url_js = q{ function(data) {
         var height = data.height || '_';
         var scale = data.scale || '_';
         var key = src+width+height+scale;
-        console.log("HASHING ",key);
-        return $.sha256(key);
+        var hash = $.sha256(key);
+        console.log("HASH "+src+" ("+width+" x "+height+" x "+scale+") -> "+hash);
+        return hash;
     }};
 
 get '/demo' => sub {
@@ -56,9 +58,12 @@ get '/trigger' => sub {
             'x-amz-meta-client-user-agent' => $self->req->headers->user_agent,
         };
         my $res = $s3->store( $src, $name, $metadata, $properties );
-        $self->res->headers->header( 'X-Frantic-Scaler' => $res );
+        print STDERR "TRIGGER $res\n";
+        $self->res->headers->header( 'X-Frantic-Scaler-Source-URL' => $src );
+        $self->res->headers->header( 'X-Frantic-Scaler-URL' => $res );
         $self->render( text => '', format=>'txt', status => 204 );
     } catch {
+        print STDERR "TRIGGER ERROR $_";
         die $_ if app->mode eq 'development';
         $self->render( text => '', format=>'txt', status => 403 );
     };

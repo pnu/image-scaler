@@ -48,13 +48,16 @@ sub store : method {
     my $head = $self->bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
         my $img_head = $self->ua->head( $src ) || die;
-        return 'NOT MODIFIED' if (
+        if (
             $head->{'x-amz-meta-src-last-modified'} and $img_head->header('Last-Modified') and
             $img_head->header('Last-Modified') eq $head->{'x-amz-meta-src-last-modified'}
             or
             $head->{'x-amz-meta-src-etag'} and $img_head->header('ETag') and
             $img_head->header('ETag') eq $head->{'x-amz-meta-etag'}
-        );
+        ) {
+            print STDERR "STORE NOT MODIFIED\n";
+            return 'http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
+        }
     }
 
     my $img_src = $self->ua->get( $src );
@@ -86,8 +89,7 @@ sub store : method {
         %{ $metadata || {} },
     }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
-    print STDERR "$src -> $width x $height -> $name\n";
-    return 'STORED http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
+    return 'http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
 }
 
 1;
