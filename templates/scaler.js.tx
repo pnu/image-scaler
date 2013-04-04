@@ -8,7 +8,7 @@ $(document).ready(function() {
     var image_s3_url = <: $image_s3_url_code | raw :>;
 
     var image_properties = function($el) {
-        var data = $el.data();
+        var data = $el.clone().data();
         data.width = data.width || $el.width();
         data.height = data.height || $el.height();
         data.width *= pixel_ratio;
