@@ -97,7 +97,7 @@ sub store : method {
     ) : $scaled;
 
     my $img_out;
-    my $img_out_mime = $self->mimetypes->type( "image/$type" ) || $img_mime;
+    my $img_out_mime = defined $type && $self->mimetypes->type( "image/$type" ) || $img_mime;
     $cropped->write( data => \$img_out, type => $img_out_mime->subType )
         || X->throw( error => Imager->errstr );
 
