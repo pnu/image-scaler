@@ -8,6 +8,7 @@ use Net::Amazon::S3;
 use Exception::Class qw( X );
 use Imager;
 use LWP::UserAgent;
+use MIME::Types;
 
 has 'aws_access_key_id' =>      ( is => 'rw', default => $ENV{AWS_ACCESS_KEY_ID} );
 has 'aws_secret_access_key' =>  ( is => 'rw', default => $ENV{AWS_SECRET_ACCESS_KEY} );
@@ -16,6 +17,7 @@ has 's3_bucket_name' =>         ( is => 'rw', default => $ENV{S3_BUCKET_NAME} );
 has 's3' =>         ( is => 'ro', builder => '_build_s3', lazy => 1 );
 has 'bucket' =>     ( is => 'ro', builder => '_build_bucket', lazy => 1 );
 has 'ua' =>         ( is => 'ro', builder => '_build_ua', lazy => 1 );
+has 'mimetypes' =>  ( is => 'ro', default => sub { MIME::Types->new } );
 
 sub _build_ua {
     my $self = shift;
@@ -47,7 +49,8 @@ sub store : method {
 
     my $head = $self->bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
-        my $img_head = $self->ua->head( $src ) || die;
+        my $img_head = $self->ua->head( $src );
+        die if $img_head->is_error;
         if (
             $head->{'x-amz-meta-src-last-modified'} and $img_head->header('Last-Modified') and
             $img_head->header('Last-Modified') eq $head->{'x-amz-meta-src-last-modified'}
@@ -63,21 +66,32 @@ sub store : method {
     my $img_src = $self->ua->get( $src );
     die if $img_src->is_error;
 
+    my $type = $self->mimetypes->type( $img_src->header('Content-Type') );
+    my $img = Imager->new(
+        data => $img_src->content,
+        ( $type ? (type => $type->subType) : () ),
+    ) || die Imager->errstr;
+
     my ($width,$height,$scale) = (
         $properties->{width}, $properties->{height}, $properties->{scale}
     ) if $properties;
 
-    my $img = Imager->new( data => $img_src->content ) || die Imager->errstr;
+    my $scaled = $img->scale(
+        ( $width  ? ( xpixels => $width  )  : () ),
+        ( $height ? ( ypixels => $height ) : () ),
+        ( $scale  ? ( type    => 
+            ( $scale eq 'crop' ? 'max' : $scale )
+        ) : () ),
+    ) || X->throw( error => Imager->errstr );
+
+    my $cropped = ( not defined $scale or $scale eq 'crop' ) ? (
+        $scaled->crop( width => $width, height => $height ) ||
+            X->throw( error => Imager->errstr )
+    ) : $scaled;
+
     my $img_out;
-    if ( $width and $height ) {
-        $img->scale( xpixels => $width, ypixels => $height, type => 'max')
-            ->crop( width => $width, height => $height )
-            ->write( data => \$img_out, type => 'jpeg' )
-            || X->throw( error => Imager->errstr );
-    } else {
-        $img->write( data => \$img_out, type => 'jpeg' )
-            || X->throw( error => Imager->errstr );
-    }
+    $cropped->write( data => \$img_out, type => 'jpeg' )
+        || X->throw( error => Imager->errstr );
 
     my $response = $self->bucket->add_key( $name, $img_out, {
         content_type => 'image/jpeg',

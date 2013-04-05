@@ -4,7 +4,7 @@
         Image scaler demo
     </title>
     <style>
-        img.demo { width: 30%; height: 300px; }
+        img.demo { width: 30%; }
         img.autoscale { visibility: hidden; }
     </style>
 </head>

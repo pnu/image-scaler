@@ -9,21 +9,22 @@ $(document).ready(function() {
 
     var image_properties = function($el) {
         var data = $el.clone().data();
-        data.width = data.width || $el.width();
-        data.height = data.height || $el.height();
-        data.width *= pixel_ratio;
-        data.height *= pixel_ratio;
+        data.width = data.width || $el.width() || undefined;
+        data.height = data.height || $el.height() || undefined;
+        if (data.width) { data.width *= pixel_ratio }
+        if (data.height) { data.height *= pixel_ratio }
         return data;
     };
 
     $('img.autoscale')
         .attr("src",function() {
-            return s3_bucket_url+image_s3_url(image_properties($(this)));
+            $(this).data('autoscale',image_properties($(this)));
+            return s3_bucket_url+image_s3_url($(this).data('autoscale'));
         })
         .one("error", function() {
             $.ajax( trigger_url, {
                 cache: true, dataType: 'json', context: this,
-                timeout: trigger_timeout, data: image_properties($(this)),
+                timeout: trigger_timeout, data: $(this).data('autoscale'),
                 success: function() {
                     $(this).attr('src',$(this).attr('src'));
                 },
