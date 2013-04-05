@@ -3,7 +3,7 @@ $(document).ready(function() {
     var s3_bucket_url = '<: $bucketurl | raw :>';
     var trigger_url = '<: $c.url_for('/trigger').to_abs | raw :>';
     var trigger_timeout = <: $timeout | raw :>;
-    var pixel_ratio = window.devicePixelRatio || 1;
+    var pixelratio = window.devicePixelRatio || 1;
 
     var image_s3_url = <: $image_s3_url_code | raw :>;
 
@@ -11,8 +11,7 @@ $(document).ready(function() {
         var data = $el.clone().data();
         data.width = data.width || $el.width() || undefined;
         data.height = data.height || $el.height() || undefined;
-        if (data.width) { data.width *= pixel_ratio }
-        if (data.height) { data.height *= pixel_ratio }
+        if (!data.pixelratio) data.pixelratio = pixelratio;
         return data;
     };
 

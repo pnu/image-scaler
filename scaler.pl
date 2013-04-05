@@ -14,10 +14,13 @@ my $image_s3_url = sub {
     my $src = $data->{src};
     my $width = $data->{width} || '_';
     my $height = $data->{height} || '_';
+    my $pixelratio = $data->{pixelratio} || '_';
     my $scale = $data->{scale} || '_';
-    my $key = $src.$width.$height.$scale;
+    my $type = $data->{type} || '_';
+    my $salt = $data->{salt} || '_';
+    my $key = $src.$width.$height.$pixelratio.$scale.$type.$salt;
     my $hash = sha256_hex( $key );
-    print STDERR "HASH $src ($width x $height x $scale) -> $hash\n";
+    print STDERR "HASH $src ($width x $height x $pixelratio x $scale x $type x $salt) -> $hash\n";
     return $hash;
 };
 
@@ -25,10 +28,13 @@ my $image_s3_url_js = q{ function(data) {
         var src = data.src;
         var width = data.width || '_';
         var height = data.height || '_';
+        var pixelratio = data.pixelratio || '_';
         var scale = data.scale || '_';
-        var key = src+width+height+scale;
+        var type = data.type || '_';
+        var salt = data.salt || '_';
+        var key = src+width+height+pixelratio+scale+type+salt;
         var hash = $.sha256(key);
-        console.log("HASH "+src+" ("+width+" x "+height+" x "+scale+") -> "+hash);
+        console.log("HASH "+src+" ("+width+" x "+height+" x "+pixelratio+" x "+scale+" x "+type+" x "+salt+") -> "+hash);
         return hash;
     }};
 

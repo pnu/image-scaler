@@ -66,15 +66,22 @@ sub store : method {
     my $img_src = $self->ua->get( $src );
     die if $img_src->is_error;
 
-    my $type = $self->mimetypes->type( $img_src->header('Content-Type') );
+    my $img_mime = $self->mimetypes->type( $img_src->header('Content-Type') );
     my $img = Imager->new(
         data => $img_src->content,
-        ( $type ? (type => $type->subType) : () ),
+        ( $img_mime ? (type => $img_mime->subType) : () ),
     ) || die Imager->errstr;
 
-    my ($width,$height,$scale) = (
-        $properties->{width}, $properties->{height}, $properties->{scale}
+    my ($width,$height,$scale,$type,$pixelratio) = (
+        $properties->{width}, $properties->{height},
+        $properties->{scale}, $properties->{type},
+        $properties->{pixelratio},
     ) if $properties;
+
+    if ( $pixelratio > 0 and $pixelratio <= 4 ) {
+        $width *= $pixelratio if $width;
+        $height *= $pixelratio if $height;
+    }
 
     my $scaled = $img->scale(
         ( $width  ? ( xpixels => $width  )  : () ),
@@ -90,11 +97,12 @@ sub store : method {
     ) : $scaled;
 
     my $img_out;
-    $cropped->write( data => \$img_out, type => 'jpeg' )
+    my $img_out_mime = $self->mimetypes->type( "image/$type" ) || $img_mime;
+    $cropped->write( data => \$img_out, type => $img_out_mime->subType )
         || X->throw( error => Imager->errstr );
 
     my $response = $self->bucket->add_key( $name, $img_out, {
-        content_type => 'image/jpeg',
+        content_type => $img_out_mime->type,
         acl_short => 'public-read',
         'x-amz-meta-src-uri' => $src,
         'x-amz-meta-src-etag' => scalar $img_src->header('ETag'),
