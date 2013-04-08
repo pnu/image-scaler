@@ -15,7 +15,6 @@ has 'aws_secret_access_key' =>  ( is => 'rw', default => $ENV{AWS_SECRET_ACCESS_
 has 's3_bucket_name' =>         ( is => 'rw', default => $ENV{S3_BUCKET_NAME} );
 
 has 's3' =>         ( is => 'ro', builder => '_build_s3', lazy => 1 );
-has 'bucket' =>     ( is => 'ro', builder => '_build_bucket', lazy => 1 );
 has 'ua' =>         ( is => 'ro', builder => '_build_ua', lazy => 1 );
 has 'mimetypes' =>  ( is => 'ro', default => sub { MIME::Types->new } );
 
@@ -39,15 +38,12 @@ sub _build_s3 {
     });
 }
 
-sub _build_bucket {
-    my ( $self ) = @_;
-    $self->s3->bucket($self->s3_bucket_name);
-}
-
 sub store : method {
-    my ( $self, $src, $name, $metadata, $properties ) = @_;
+    my ( $self, $src, $bucketname, $name, $metadata, $properties ) = @_;    
+    my $bucket = $self->s3->bucket( $bucketname || $self->s3_bucket_name )
+        or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
-    my $head = $self->bucket->head_key( $name );
+    my $head = $bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
         my $img_head = $self->ua->head( $src );
         die if $img_head->is_error;
@@ -59,7 +55,7 @@ sub store : method {
             $img_head->header('ETag') eq $head->{'x-amz-meta-etag'}
         ) {
             print STDERR "STORE NOT MODIFIED\n";
-            return 'http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
+            return 'http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
         }
     }
 
@@ -101,7 +97,7 @@ sub store : method {
     $cropped->write( data => \$img_out, type => $img_out_mime->subType )
         || X->throw( error => Imager->errstr );
 
-    my $response = $self->bucket->add_key( $name, $img_out, {
+    my $response = $bucket->add_key( $name, $img_out, {
         content_type => $img_out_mime->type,
         acl_short => 'public-read',
         'x-amz-meta-src-uri' => $src,
@@ -111,7 +107,7 @@ sub store : method {
         %{ $metadata || {} },
     }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
-    return 'http://'.$self->bucket->bucket.'.s3.amazonaws.com/'.$name;
+    return 'http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
 }
 
 1;
