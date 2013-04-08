@@ -9,6 +9,7 @@ my $app = FranticCom::Scaler->psgi_app;
 my $root = FranticCom::Scaler->path_to('root');
 
 builder {
+    enable 'ReverseProxy';
     enable 'ConditionalGET';
     enable 'Static', path => qr{^/(assets/|static/|favicon.ico)}, root => $root;
     enable 'Header', set => ['Access-Control-Allow-Origin' => '*'];
