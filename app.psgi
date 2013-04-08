@@ -5,13 +5,12 @@ use Plack::Builder;
 use Plack::Middleware::Header;
 use FranticCom::Scaler;
 
-$ENV{MOJO_MODE} = $ENV{PLACK_ENV} eq 'development' ? 'development' : 'production';
-
-my $app = FranticCom::Scaler->new->start;
+my $app = FranticCom::Scaler->psgi_app;
+my $root = FranticCom::Scaler->path_to('root');
 
 builder {
     enable 'ConditionalGET';
-    enable 'Static', path => '/', pass_through => 1;
+    enable 'Static', path => qr{^/(assets/|static/|favicon.ico)}, root => $root;
     enable 'Header', set => ['Access-Control-Allow-Origin' => '*'];
     $app;
 };

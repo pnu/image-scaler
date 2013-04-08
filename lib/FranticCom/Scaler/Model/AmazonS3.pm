@@ -1,5 +1,5 @@
-package FranticCom::Scaler::AmazonS3;
-
+package FranticCom::Scaler::Model::AmazonS3;
+use parent 'Catalyst::Model';
 use Moose;
 use namespace::autoclean;
 use Data::Dumper;

@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
     var s3_bucket = '<: $bucketname | raw :>';
-    var trigger_url = '<: $c.url_for('/trigger').to_abs | raw :>';
+    var trigger_url = '<: $c.uri_for('/trigger') | raw :>';
     var trigger_timeout = <: $timeout | raw :>;
     var pixelratio = window.devicePixelRatio || 1;
 

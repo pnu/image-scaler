@@ -1,11 +1,12 @@
-package FranticCom::Scaler::Controller;
-
-use Mojo::Base 'Mojolicious::Controller';
+package FranticCom::Scaler::Controller::Root;
+use Moose;
+use namespace::autoclean;
 use Digest::SHA qw(sha256_hex);
-use FranticCom::Scaler::AmazonS3;
 use Try::Tiny;
 
-my $s3 = FranticCom::Scaler::AmazonS3->new;
+BEGIN { extends 'Catalyst::Controller' }
+
+__PACKAGE__->config(namespace => '');
 
 my $image_s3_url = sub {
     my ( $data ) = @_;
@@ -36,41 +37,47 @@ my $image_s3_url_js = q{ function(data) {
         return hash;
     }};
 
-sub demo {
-    my $self = shift;
-    $self->render(template=>'demo', format=>'html', handler=>'tx');
+sub demo : Local Args(0) {
+    my ( $self, $c ) = @_;
 }
 
-sub scalerjs {
-    my $self = shift;
-    $self->stash->{image_s3_url_code} = $image_s3_url_js;
-    $self->stash->{timeout} = $self->config->{timeout};
-    $self->stash->{bucketname} = $s3->s3_bucket_name;
-    $self->res->headers->header( 'Cache-Control' => 'max-age=600' );
-    $self->render(template=>'scaler', format=>'js', handler=>'tx');
+sub scalerjs : Path('scaler.js') Args(0) {
+    my ( $self, $c ) = @_;
+    $c->stash->{image_s3_url_code} = $image_s3_url_js;
+    $c->stash->{timeout} = 10000;
+    $c->stash->{bucketname} = $c->model('AmazonS3')->s3_bucket_name;
+    $c->res->headers->header( 'Cache-Control' => 'max-age=600' );
+    $c->res->content_type('application/javascript');
 }
 
-sub trigger {
-    my $self = shift;
+sub trigger : Local Args(0) {
+    my ( $self, $c ) = @_;
     try {
-        my $properties = $self->req->params->to_hash;
+        my $properties = $c->req->params;
         my $src = $properties->{src};
         my $bucket = $properties->{bucket} || undef;
         my $name = $image_s3_url->($properties);
         my $metadata = {
             ##'x-amz-meta-client-remote-address' => $self->tx->remote_address,
-            'x-amz-meta-client-user-agent' => $self->req->headers->user_agent,
+            'x-amz-meta-client-user-agent' => $c->req->headers->user_agent,
         };
-        my $res = $s3->store( $src, $bucket, $name, $metadata, $properties );
+        my $res = $c->model('AmazonS3')->store( $src, $bucket, $name, $metadata, $properties );
         print STDERR "TRIGGER $res\n";
-        $self->res->headers->header( 'X-Frantic-Scaler-Source-URL' => $src );
-        $self->res->headers->header( 'X-Frantic-Scaler-URL' => $res );
-        $self->render( text => '', format=>'txt', status => 204 );
+        $c->res->headers->header( 'X-Frantic-Scaler-Source-URL' => $src );
+        $c->res->headers->header( 'X-Frantic-Scaler-URL' => $res );
+        $c->res->body('');
+        $c->res->status(204);
     } catch {
         print STDERR "TRIGGER ERROR $_\n";
-        die $_ if app->mode eq 'development';
-        $self->render( text => '', format=>'txt', status => 403 );
+        ##die $_ if app->mode eq 'development';
+        $c->res->status(403);
     };
 }
+
+sub end : ActionClass('RenderView') {
+    my ( $self, $c ) = @_;
+}
+
+__PACKAGE__->meta->make_immutable;
 
 1;

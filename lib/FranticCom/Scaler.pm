@@ -1,16 +1,16 @@
 package FranticCom::Scaler;
+use Moose;
+use namespace::autoclean;
+use Catalyst::Runtime 5.80;
+use Catalyst qw/
+    ConfigLoader
+    Unicode::Encoding
+/;
 
-use Mojo::Base 'Mojolicious';
+extends 'Catalyst';
 
-sub startup {
-    my $self = shift;
-    $self->secret('Mojolicious rocks');
-    $self->plugin('xslate_renderer');
-    $self->plugin('Config');
-    my $r = $self->routes;
-    $r->get('demo')->to('controller#demo');
-    $r->get('scaler.js')->to('controller#scalerjs');
-    $r->get('trigger')->to('controller#trigger');
-}
+our $VERSION = '0.01';
+
+__PACKAGE__->setup();
 
 1;
