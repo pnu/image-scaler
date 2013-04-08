@@ -8,6 +8,8 @@ BEGIN { extends 'Catalyst::Controller' }
 
 __PACKAGE__->config(namespace => '');
 
+has 'outprefix' => ( is => 'rw', default => $ENV{FRANTICCOM_SCALER_PREFIX} || 'scaler/' );
+
 my $image_s3_url = sub {
     my ( $data ) = @_;
     my $src = $data->{src};
@@ -46,6 +48,7 @@ sub scalerjs : Path('scaler.js') Args(0) {
     $c->stash->{image_s3_url_code} = $image_s3_url_js;
     $c->stash->{timeout} = 10000;
     $c->stash->{bucketname} = $c->model('AmazonS3')->s3_bucket_name;
+    $c->stash->{outprefix} = $self->outprefix;
     $c->res->headers->header( 'Cache-Control' => 'max-age=600' );
     $c->res->content_type('application/javascript');
 }
@@ -56,7 +59,7 @@ sub trigger : Local Args(0) {
         my $properties = $c->req->params;
         my $src = $properties->{src};
         my $bucket = $properties->{bucket} || undef;
-        my $name = $image_s3_url->($properties);
+        my $name = $self->outprefix.$image_s3_url->($properties);
         my $metadata = {
             ##'x-amz-meta-client-remote-address' => $self->tx->remote_address,
             'x-amz-meta-client-user-agent' => $c->req->headers->user_agent,

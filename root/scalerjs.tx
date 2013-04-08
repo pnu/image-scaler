@@ -1,6 +1,7 @@
 $(document).ready(function() {
 
     var s3_bucket = '<: $bucketname | raw :>';
+    var s3_prefix = '<: $outprefix | raw :>';
     var trigger_url = '<: $c.uri_for('/trigger') | raw :>';
     var trigger_timeout = <: $timeout | raw :>;
     var pixelratio = window.devicePixelRatio || 1;
@@ -20,7 +21,7 @@ $(document).ready(function() {
             var properties = image_properties($(this));
             var bucket = properties.bucket || s3_bucket;
             $(this).data('autoscale',properties);
-            return '//'+bucket+'.s3.amazonaws.com/'+image_s3_url(properties);
+            return '//'+bucket+'.s3.amazonaws.com/'+s3_prefix+image_s3_url(properties);
         })
         .one("error", function() {
             $.ajax( trigger_url, {
