@@ -21,9 +21,17 @@
         class="demo autoscale"
         data-src="http://www.frantic.com/assets/img/home/home-3.jpg"
     />
-
+    <script type="text/javascript">
+        var ImageScalerConfig = {
+            image_host: '<: $scaler.image_host | raw :>',
+            trigger_url: '<: $scaler.trigger_url | raw :>',
+            max_retries: '<: $scaler.max_retries | raw :>',
+            retry_delay: '<: $scaler.retry_delay | raw :>',
+        };
+    </script>
     <script src="<: $c.uri_for('/assets/js/jquery.min.js') :>"></script>
     <script src="<: $c.uri_for('/assets/js/jquery.sha256.min.js') :>"></script>
-    <script src="<: $c.uri_for('/scaler.js') :>"></script>
+    <script src="<: $c.uri_for('/assets/js/scaler.js') :>"></script>
+    <script>ImageScaler.scale(document);</script>
 </body>
 </html>

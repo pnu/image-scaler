@@ -1,5 +1,4 @@
-package FranticCom::Scaler::Model::AmazonS3;
-use parent 'Catalyst::Model';
+package FranticCom::Scaler::AmazonS3;
 use Moose;
 use namespace::autoclean;
 use Data::Dumper;
@@ -38,9 +37,9 @@ sub _build_s3 {
     });
 }
 
-sub store : method {
-    my ( $self, $src, $bucketname, $name, $metadata, $properties ) = @_;    
-    my $bucket = $self->s3->bucket( $bucketname || $self->s3_bucket_name )
+sub store {
+    my ( $self, $src, $name, $metadata, $properties ) = @_;
+    my $bucket = $self->s3->bucket( $self->s3_bucket_name )
         or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
     my $head = $bucket->head_key( $name );
@@ -60,7 +59,7 @@ sub store : method {
     }
 
     my $img_src = $self->ua->get( $src );
-    die if $img_src->is_error;
+    die $img_src->status_line."\n" if $img_src->is_error;
 
     my $img_mime = $self->mimetypes->type( $img_src->header('Content-Type') );
     my $img = Imager->new(
@@ -74,7 +73,7 @@ sub store : method {
         $properties->{pixelratio},
     ) if $properties;
 
-    if ( $pixelratio > 0 and $pixelratio <= 4 ) {
+    if ( defined $pixelratio and $pixelratio > 0 and $pixelratio <= 4 ) {
         $width *= $pixelratio if $width;
         $height *= $pixelratio if $height;
     }
@@ -82,7 +81,7 @@ sub store : method {
     my $scaled = $img->scale(
         ( $width  ? ( xpixels => $width  )  : () ),
         ( $height ? ( ypixels => $height ) : () ),
-        ( $scale  ? ( type    => 
+        ( $scale  ? ( type    =>
             ( $scale eq 'crop' ? 'max' : $scale )
         ) : () ),
     ) || X->throw( error => Imager->errstr );
@@ -94,8 +93,13 @@ sub store : method {
 
     my $img_out;
     my $img_out_mime = defined $type && $self->mimetypes->type( "image/$type" ) || $img_mime;
-    $cropped->write( data => \$img_out, type => $img_out_mime->subType )
-        || X->throw( error => Imager->errstr );
+    $cropped->write(
+        data => \$img_out,
+        type => $img_out_mime->subType,
+        jpeg_progressive => 1,
+        png_interlace => 1,
+        jpegquality=>90,
+    ) || X->throw( error => Imager->errstr );
 
     my $response = $bucket->add_key( $name, $img_out, {
         content_type => $img_out_mime->type,

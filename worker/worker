@@ -1,0 +1,37 @@
+#!/usr/bin/env perl
+use Moose;
+use Redis;
+use Data::Dumper;
+use Try::Tiny;
+use lib 'lib';
+use FranticCom::SetCloudEnv;
+use FranticCom::Scaler;
+use JSON qw( decode_json encode_json );
+
+sub redis_connect {
+    my $r = Redis->new(
+        server   => $ENV{REDISHOST}.':'.$ENV{REDISPORT},
+        password => scalar $ENV{REDISPASSWORD},
+    ) || die "unable to connect\n";
+    die "unable to ping\n" unless $r->ping;
+    return $r;
+}
+
+my $redis = redis_connect();
+my $scaler = FranticCom::Scaler->new();
+
+while(1) {
+    my ($key,$val) = $redis->blpop('scaler',60);
+    if ( not defined $key or not defined $val ) {
+        print STDERR "HEARTBEAT\n";
+        next;
+    }
+    try {
+        my $count = $redis->lrem($key,0,$val);
+        print STDERR "TRIGGER $key $val [+$count]\n";
+        $val = decode_json( $val );
+        $scaler->trigger($val) if ( $key eq 'scaler' );
+    } catch {
+        print STDERR "EXCEPTION $key $_";
+    };
+}

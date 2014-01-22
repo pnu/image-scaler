@@ -27,3 +27,4 @@ requires 'LWP::UserAgent';
 requires 'Try::Tiny';
 requires 'Plack::Middleware::Header';
 requires 'Catalyst::Plugin::Unicode::Encoding';
+requires 'Redis';

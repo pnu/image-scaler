@@ -1,4 +1,4 @@
-package FranticCom::Scaler::View::Xslate;
+package FranticCom::Scaler::WebApp::View::Xslate;
 use Moose;
 extends 'Catalyst::View::Xslate';
 
