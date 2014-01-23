@@ -6,16 +6,15 @@ use Try::Tiny;
 use FranticCom::Scaler::AmazonS3;
 
 has 's3' => ( is => 'ro', default => sub { FranticCom::Scaler::AmazonS3->new } );
-has 'prefix' => ( is => 'ro', default => $ENV{FRANTICCOM_SCALER_PREFIX} || 'scaler' );
+has 'prefix' => ( is => 'ro', default => $ENV{FRANTICCOM_SCALER_PREFIX} );
 has 'host' => ( is => 'ro', default => $ENV{FRANTICCOM_SCALER_HOST} );
 has 'max_retries' => ( is => 'ro', default => 10 );
 has 'retry_delay' => ( is => 'ro', default => 1000 );
 
 sub image_host {
     my ( $self ) = @_;
-    return $self->host
-        ? $self->host.'/'.$self->prefix
-        : $self->s3->s3_bucket_name.'.s3.amazonaws.com/'.$self->prefix;
+    my $host = $self->host ? $self->host : $self->s3->s3_bucket_name.'.s3.amazonaws.com';
+    return $self->prefix ? $host.'/'.$self->prefix : $host;
 }
 
 sub image_path {
@@ -35,7 +34,10 @@ sub image_path {
 sub trigger {
     my ( $self, $properties ) = @_;
     my $src = $properties->{src};
-    my $name = $self->prefix.'/'.$self->image_path($properties);
+    my $id = $properties->{id};
+    my $name = $self->prefix ? $self->prefix.'/' : '';
+    $name .= $id ? $id.'/' : '';
+    $name .= $self->image_path($properties);
     my $metadata = {
         'Cache-Control' => 'public,max-age=604800',
     };

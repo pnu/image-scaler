@@ -12,18 +12,20 @@ __PACKAGE__->config(namespace => '');
 has 'scaler' => ( is => 'ro', default => sub { FranticCom::Scaler->new } );
 
 sub get_config : Private {
-    my ( $self, $c ) = @_;
+    my ( $self, $c, $id ) = @_;
+    $id = 'none' unless $id;
     return {
-        image_host => $self->scaler->image_host,
+        image_host => $self->scaler->image_host . "/$id",
         max_retries => $self->scaler->max_retries,
         retry_delay => $self->scaler->retry_delay,
-        trigger_url => $c->uri_for_action('/index_trigger')
+        trigger_url => $c->uri_for_action('/index_trigger',$id)
     };
 }
 
-sub index_trigger : Path Args(0) Method('POST') {
-    my ( $self, $c ) = @_;
-    $c->model('Worker')->scaler($c->req->params);
+sub index_trigger : Path Args(1) Method('POST') {
+    my ( $self, $c, $id ) = @_;
+    my $params = $c->req->params; $params->{id} = $id;
+    $c->model('Worker')->scaler($params);
     $c->res->status(204);
 }
 
