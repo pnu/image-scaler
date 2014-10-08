@@ -43,15 +43,15 @@ sub store {
         or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
     my $head = $bucket->head_key( $name );
-    if ( $head and $head->{'x-amz-meta-src-uri'} eq $src ) {
+    if ( $head and $head->{'x-amz-meta-src-uri'} eq $src->as_string ) {
         my $img_head = $self->ua->head( $src );
-        die if $img_head->is_error;
+        die $img_head->status_line if $img_head->is_error;
         if (
             $head->{'x-amz-meta-src-last-modified'} and $img_head->header('Last-Modified') and
             $img_head->header('Last-Modified') eq $head->{'x-amz-meta-src-last-modified'}
             or
             $head->{'x-amz-meta-src-etag'} and $img_head->header('ETag') and
-            $img_head->header('ETag') eq $head->{'x-amz-meta-etag'}
+            $img_head->header('ETag') eq $head->{'x-amz-meta-src-etag'}
         ) {
             print STDERR "STORE NOT MODIFIED\n";
             return 'http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
@@ -59,7 +59,7 @@ sub store {
     }
 
     my $img_src = $self->ua->get( $src );
-    die $img_src->status_line."\n" if $img_src->is_error;
+    die $img_src->status_line if $img_src->is_error;
 
     my $img_mime = $self->mimetypes->type( $img_src->header('Content-Type') );
     my $img = Imager->new(
@@ -104,7 +104,7 @@ sub store {
     my $response = $bucket->add_key( $name, $img_out, {
         content_type => $img_out_mime->type,
         acl_short => 'public-read',
-        'x-amz-meta-src-uri' => $src,
+        'x-amz-meta-src-uri' => $src->as_string,
         'x-amz-meta-src-etag' => scalar $img_src->header('ETag'),
         'x-amz-meta-src-date' => scalar $img_src->header('Date'),
         'x-amz-meta-src-last-modified' => scalar $img_src->header('Last-Modified'),

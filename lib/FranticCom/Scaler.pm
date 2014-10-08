@@ -4,6 +4,7 @@ use namespace::autoclean;
 use Digest::SHA qw(sha256_hex);
 use Try::Tiny;
 use FranticCom::Scaler::AmazonS3;
+use URI;
 
 has 's3' => ( is => 'ro', default => sub { FranticCom::Scaler::AmazonS3->new } );
 has 'prefix' => ( is => 'ro', default => $ENV{FRANTICCOM_SCALER_PREFIX} );
@@ -33,7 +34,7 @@ sub image_path {
 
 sub trigger {
     my ( $self, $properties ) = @_;
-    my $src = $properties->{src};
+    my $src = URI->new($properties->{src});
     my $id = $properties->{id};
     my $name = $self->prefix ? $self->prefix.'/' : '';
     $name .= $id ? $id.'/' : '';

@@ -32,6 +32,6 @@ while(1) {
         $val = decode_json( $val );
         $scaler->trigger($val) if ( $key eq 'scaler' );
     } catch {
-        print STDERR "EXCEPTION $key $_";
+        print STDERR "EXCEPTION $key $_\n";
     };
 }
