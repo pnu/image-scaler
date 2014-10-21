@@ -56,6 +56,11 @@ sub index_get_js : Path('js') Args(1) Method('GET') {
     }
 }
 
+sub index_get_js_legacy : Path('1') Args(0) Method('GET') {
+    my ( $self, $c ) = @_;
+    $c->detach('index_get_js',[1]);
+}
+
 sub default : Path {
     my ( $self, $c ) = @_;
     $c->detach('not_found');
