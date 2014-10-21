@@ -29,6 +29,19 @@ sub index_trigger : Path Args(1) Method('POST') {
     $c->res->status(204);
 }
 
+sub index_trigger_block : Path Args(1) Method('GET') {
+    my ( $self, $c, $id ) = @_;
+    my $params = $c->req->params; $params->{id} = $id;
+    my $resp = $c->model('Worker')->scaler_block($params);
+    if ($resp) {
+        $c->res->redirect($resp->{url},301);
+    } else {
+        $c->res->status(503);
+        $c->res->header('Retry-After' => 5);
+        $c->res->body('');
+    }
+}
+
 sub index_get_js : Path('js') Args(1) Method('GET') {
     my ( $self, $c, $version ) = @_;
     $c->detach('unsupported_version') unless ( $version && $version eq '1' );

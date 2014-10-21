@@ -3,7 +3,7 @@ use namespace::autoclean;
 use Moose;
 use Redis;
 use Data::Dumper;
-use JSON qw( encode_json );
+use JSON qw( encode_json decode_json );
 
 extends 'Catalyst::Model';
 
@@ -24,6 +24,16 @@ sub scaler {
     my ( $self, $data ) = @_;
     return unless $data;
     return $self->redis->rpush('scaler',encode_json($data));
+}
+
+sub scaler_block {
+    my ( $self, $data ) = @_;
+    return unless $data;
+    my $resp_key = 'resp_'.$self->redis->incr('resp');
+    $data->{_resp_key} = $resp_key;
+    $self->redis->rpush('scaler',encode_json($data));
+    my ($key,$val) = $self->redis->blpop($resp_key,5);
+    return ( $key eq $resp_key and defined $val ) ? decode_json($val) : undef;
 }
 
 __PACKAGE__->meta->make_immutable;

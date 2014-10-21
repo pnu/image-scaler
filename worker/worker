@@ -30,7 +30,16 @@ while(1) {
         my $count = $redis->lrem($key,0,$val);
         print STDERR "TRIGGER $key $val [+$count]\n";
         $val = decode_json( $val );
-        $scaler->trigger($val) if ( $key eq 'scaler' );
+        if ( $key eq 'scaler' ) {
+            my $resp_key = $val->{_resp_key};
+            my $resp = $scaler->trigger($val);
+            if ( $resp_key ) {
+                my $resp = encode_json({url=>$resp});
+                print STDERR "RESPONSE $resp_key $resp\n";
+                $redis->rpush( $resp_key, $resp );
+                $redis->expire( $resp_key, 5 );
+            }
+        }
     } catch {
         print STDERR "EXCEPTION $key $_\n";
     };
