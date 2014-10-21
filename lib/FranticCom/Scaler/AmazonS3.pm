@@ -82,14 +82,23 @@ sub store {
         ( $width  ? ( xpixels => $width  )  : () ),
         ( $height ? ( ypixels => $height ) : () ),
         ( $scale  ? ( type    =>
-            ( $scale eq 'crop' ? 'max' : $scale )
+            ( $scale eq 'crop' ? 'max' :
+              $scale eq 'fill' ? 'min' : $scale )
         ) : () ),
-    ) || X->throw( error => Imager->errstr );
+    ) || X->throw( error => $img->errstr );
 
-    my $cropped = ( not defined $scale or $scale eq 'crop' ) ? (
-        $scaled->crop( width => $width, height => $height ) ||
-            X->throw( error => Imager->errstr )
-    ) : $scaled;
+    my $cropped;
+    if ( not defined $scale or $scale eq 'crop' ) {
+        $cropped = $scaled->crop( width => $width, height => $height ) ||
+            X->throw( error => $scaled->errstr );
+    } elsif ( $scale eq 'fill' ) {
+        my $bg = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
+        $bg->compose(src => $scaled) || X->throw( error => $bg->errstr );
+        $bg->settag(name => 'i_background', value => 'color(255,255,255)');
+        $cropped = $bg;
+    } else {
+        $cropped = $scaled;
+    }
 
     my $img_out;
     my $img_out_mime = defined $type && $self->mimetypes->type( "image/$type" ) || $img_mime;
@@ -99,7 +108,7 @@ sub store {
         jpeg_progressive => 1,
         png_interlace => 1,
         jpegquality=>90,
-    ) || X->throw( error => Imager->errstr );
+    ) || X->throw( error => $cropped->errstr );
 
     my $response = $bucket->add_key( $name, $img_out, {
         content_type => $img_out_mime->type,
