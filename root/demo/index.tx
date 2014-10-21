@@ -30,7 +30,7 @@
         };
     </script>
     <script src="<: $c.uri_for('/assets/js/jquery.min.js') :>"></script>
-    <script src="<: $c.uri_for('/1') :>"></script>
+    <script src="<: $c.uri_for('/js/1') :>"></script>
     <script>ImageScaler.scale(document);</script>
 </body>
 </html>

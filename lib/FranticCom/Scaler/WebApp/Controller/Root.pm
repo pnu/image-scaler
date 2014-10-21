@@ -29,7 +29,7 @@ sub index_trigger : Path Args(1) Method('POST') {
     $c->res->status(204);
 }
 
-sub index_get_js : Path Args(1) Method('GET') {
+sub index_get_js : Path('js') Args(1) Method('GET') {
     my ( $self, $c, $version ) = @_;
     $c->detach('unsupported_version') unless ( $version && $version eq '1' );
     my $full_path = $c->path_to( 'root','assets','js','scaler.js' );
