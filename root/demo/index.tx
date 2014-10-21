@@ -21,6 +21,10 @@
         class="demo autoscale"
         data-src="http://www.frantic.com/assets/img/home/home-3.jpg"
     />
+    <br/>
+    <img
+        src="<: $scaler.trigger_url :>?src=http%3A%2F%2Fwww.frantic.com%2Fassets%2Fimg%2Fhome%2Fhome-3.jpg&width=640"
+    />
     <script type="text/javascript">
         var ImageScalerConfig = {
             image_host: '<: $scaler.image_host | raw :>',
