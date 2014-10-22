@@ -74,6 +74,8 @@ sub store {
         $properties->{align},
     ) if $properties;
 
+    $scale = 'fill' if defined $bg;
+
     if ( defined $pixelratio and $pixelratio > 0 and $pixelratio <= 4 ) {
         $width *= $pixelratio if $width;
         $height *= $pixelratio if $height;
