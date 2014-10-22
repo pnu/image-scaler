@@ -27,7 +27,9 @@ sub image_path {
     my $scale = $data->{scale} || '_';
     my $type = $data->{type} || '_';
     my $salt = $data->{salt} || '_';
-    my $key = $src.$width.$height.$pixelratio.$scale.$type.$salt;
+    my $bg = $data->{bg} || '_';
+    my $align = $data->{align} || '_';
+    my $key = $src.$width.$height.$pixelratio.$scale.$type.$salt.$bg.$align;
     my $hash = sha256_hex( $key );
     return $hash;
 }

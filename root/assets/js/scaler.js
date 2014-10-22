@@ -14,7 +14,9 @@ var ImageScaler = new function() {
         var scale = data.scale || '_';
         var type = data.type || '_';
         var salt = data.salt || '_';
-        var key = src+width+height+pixelratio+scale+type+salt;
+        var bg = data.bg || '_';
+        var align = data.align || '_';
+        var key = src+width+height+pixelratio+scale+type+salt+bg+align;
         var hash = this.sha256(key);
         return hash;
     };
