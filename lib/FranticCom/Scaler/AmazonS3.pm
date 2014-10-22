@@ -94,8 +94,9 @@ sub store {
             X->throw( error => $scaled->errstr );
     } elsif ( $scale eq 'fill' ) {
         my $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
-        if ( defined $bg ) {
-            $background->box(filled=>1, color=>$bg)
+        my $bg_color = Imager::Color->new($bg) if defined $bg;
+        if ( defined $bg_color ) {
+            $background->box(filled=>1,color=>$bg_color)
         }
         $background->compose(src => $scaled) || X->throw( error => $background->errstr );
         $background->settag(name => 'i_background', value => 'color(255,255,255)');
