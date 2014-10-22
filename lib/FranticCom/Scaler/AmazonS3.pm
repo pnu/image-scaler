@@ -93,10 +93,31 @@ sub store {
         $cropped = $scaled->crop( width => $width, height => $height );
         X->throw( error => $scaled->errstr ) unless $cropped;
     } elsif ( $scale eq 'fill' ) {
-        my $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
+        my $background;
         my $bg_color = Imager::Color->new($bg) if defined $bg;
         if ( defined $bg_color ) {
-            $background->box(filled=>1,color=>$bg_color)
+            $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
+            X->throw( error => Imager->errstr ) unless $background;
+            $background->box(filled=>1,color=>$bg_color);
+        } elsif ( defined $bg ) {
+            my $bg_res = $self->ua->get( $bg );
+            X->throw( error => $bg_res->status_line ) if $bg_res->is_error;
+            my $bg_mime = $self->mimetypes->type( $bg_res->header('Content-Type') );
+            my $bg_base = Imager->new(
+                data => $bg_res->content,
+                ( $bg_mime ? (type => $bg_mime->subType) : () ),
+            ) || X->throw( error => Imager->errstr );
+            my $bg_scaled = $bg_base->scale(
+                xpixels => $width,
+                ypixels => $height, type => 'max'
+            ) || X->throw( error => $bg_base->errstr );
+            $background = $bg_scaled->crop(
+                width =>  $width,
+                height => $height
+            ) || X->throw( error => $bg_scaled->errstr );
+        } else {
+            $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
+            X->throw( error => Imager->errstr ) unless $background;
         }
         $background->compose(src => $scaled) || X->throw( error => $background->errstr );
         $background->settag(name => 'i_background', value => 'color(255,255,255)');
