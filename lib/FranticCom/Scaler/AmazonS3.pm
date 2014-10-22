@@ -45,7 +45,7 @@ sub store {
     my $head = $bucket->head_key( $name );
     if ( $head and $head->{'x-amz-meta-src-uri'} eq $src->as_string ) {
         my $img_head = $self->ua->head( $src );
-        die $img_head->status_line if $img_head->is_error;
+        X->throw( error => $img_head->status_line ) if $img_head->is_error;
         if (
             $head->{'x-amz-meta-src-last-modified'} and $img_head->header('Last-Modified') and
             $img_head->header('Last-Modified') eq $head->{'x-amz-meta-src-last-modified'}
@@ -59,13 +59,13 @@ sub store {
     }
 
     my $img_src = $self->ua->get( $src );
-    die $img_src->status_line if $img_src->is_error;
+    X->throw( error => $img_src->status_line ) if $img_src->is_error;
 
     my $img_mime = $self->mimetypes->type( $img_src->header('Content-Type') );
     my $img = Imager->new(
         data => $img_src->content,
         ( $img_mime ? (type => $img_mime->subType) : () ),
-    ) || die Imager->errstr;
+    ) || X->throw( error => Imager->errstr );
 
     my ($width,$height,$scale,$type,$pixelratio,$bg,$align) = (
         $properties->{width}, $properties->{height},
@@ -90,8 +90,8 @@ sub store {
 
     my $cropped;
     if ( not defined $scale or $scale eq 'crop' ) {
-        $cropped = $scaled->crop( width => $width, height => $height ) ||
-            X->throw( error => $scaled->errstr );
+        $cropped = $scaled->crop( width => $width, height => $height );
+        X->throw( error => $scaled->errstr ) unless $cropped;
     } elsif ( $scale eq 'fill' ) {
         my $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
         my $bg_color = Imager::Color->new($bg) if defined $bg;
@@ -123,7 +123,7 @@ sub store {
         'x-amz-meta-src-date' => scalar $img_src->header('Date'),
         'x-amz-meta-src-last-modified' => scalar $img_src->header('Last-Modified'),
         %{ $metadata || {} },
-    }) or X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
+    }) || X->throw( error => $self->s3->err . ": " . $self->s3->errstr );
 
     return 'http://'.$bucket->bucket.'.s3.amazonaws.com/'.$name;
 }
