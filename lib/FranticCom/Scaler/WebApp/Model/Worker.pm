@@ -33,7 +33,7 @@ sub scaler_block {
     $data->{_resp_key} = $resp_key;
     $self->redis->rpush('scaler',encode_json($data));
     my ($key,$val) = $self->redis->blpop($resp_key,5);
-    return ( $key and $key eq $resp_key and defined $val ) ? decode_json($val) : undef;
+    return ( $key and $key eq $resp_key and $val ) ? decode_json($val) : undef;
 }
 
 __PACKAGE__->meta->make_immutable;

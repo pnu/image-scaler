@@ -31,10 +31,13 @@ while(1) {
         print STDERR "TRIGGER $key $val [+$count]\n";
         $val = decode_json( $val );
         if ( $key eq 'scaler' ) {
-            my $resp_key = $val->{_resp_key};
-            my $resp = $scaler->trigger($val);
-            if ( $resp_key ) {
-                my $resp = encode_json({url=>$resp});
+            my $resp = '';
+            try {
+                $resp = encode_json({url=>$scaler->trigger($val)});
+            } catch {
+                print STDERR "EXCEPTION $key $_\n";
+            };
+            if ( my $resp_key = $val->{_resp_key} ) {
                 print STDERR "RESPONSE $resp_key $resp\n";
                 $redis->rpush( $resp_key, $resp );
                 $redis->expire( $resp_key, 5 );
