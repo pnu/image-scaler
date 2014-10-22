@@ -67,10 +67,11 @@ sub store {
         ( $img_mime ? (type => $img_mime->subType) : () ),
     ) || die Imager->errstr;
 
-    my ($width,$height,$scale,$type,$pixelratio) = (
+    my ($width,$height,$scale,$type,$pixelratio,$bg,$align) = (
         $properties->{width}, $properties->{height},
         $properties->{scale}, $properties->{type},
-        $properties->{pixelratio},
+        $properties->{pixelratio}, $properties->{bg},
+        $properties->{align},
     ) if $properties;
 
     if ( defined $pixelratio and $pixelratio > 0 and $pixelratio <= 4 ) {
@@ -92,10 +93,13 @@ sub store {
         $cropped = $scaled->crop( width => $width, height => $height ) ||
             X->throw( error => $scaled->errstr );
     } elsif ( $scale eq 'fill' ) {
-        my $bg = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
-        $bg->compose(src => $scaled) || X->throw( error => $bg->errstr );
-        $bg->settag(name => 'i_background', value => 'color(255,255,255)');
-        $cropped = $bg;
+        my $background = Imager->new(xsize=>$width,ysize=>$height,channels=>4);
+        if ( defined $bg ) {
+            $background->box(filled=>1, color=>$bg)
+        }
+        $background->compose(src => $scaled) || X->throw( error => $background->errstr );
+        $background->settag(name => 'i_background', value => 'color(255,255,255)');
+        $cropped = $background;
     } else {
         $cropped = $scaled;
     }
