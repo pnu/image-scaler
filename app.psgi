@@ -13,6 +13,5 @@ builder {
     enable 'ReverseProxy';
     enable 'ConditionalGET';
     enable 'Static', path => qr{^/(assets/|static/|favicon.ico)}, root => $root;
-    enable 'Header', set => ['Access-Control-Allow-Origin' => '*'];
     $app;
 };

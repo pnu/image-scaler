@@ -22,6 +22,12 @@ sub get_config : Private {
     };
 }
 
+sub index_trigger_options : Path Args(1) Method('OPTIONS') {
+    my ( $self, $c, $id ) = @_;
+    $c->res->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    $c->res->status(204);
+}
+
 sub index_trigger : Path Args(1) Method('POST') {
     my ( $self, $c, $id ) = @_;
     my $params = $c->req->params; $params->{id} = $id;
@@ -80,6 +86,7 @@ sub not_found : Private {
 
 sub end : ActionClass('RenderView') {
     my ( $self, $c ) = @_;
+    $c->res->header('Access-Control-Allow-Origin', $c->req->header('Origin'));
 }
 
 __PACKAGE__->meta->make_immutable;
