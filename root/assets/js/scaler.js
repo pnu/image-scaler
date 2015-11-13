@@ -31,7 +31,7 @@ var ImageScaler = new function() {
 
     var img_reloader_cb = function(el) {
         return function() {
-            $(el).attr('src',$(el).attr('src'));
+            $(el).attr('src',$(el).attr('src')+"?"+new Date().getTime());
         };
     };
     var img_trigger = function(el) {
